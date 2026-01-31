@@ -5,7 +5,7 @@ import { PersonaInput } from '@/lib/persona'
 
 type Mode = 'support' | 'check' | 'analyze'
 type CoreLevel = 'low' | 'medium' | 'high'
-type CoreKey = keyof PersonaInput
+type CoreKey = 'connection' | 'orientation' | 'research' | 'entrust'
 
 function levelToValue(level: CoreLevel) {
   if (level === 'low') return 1
