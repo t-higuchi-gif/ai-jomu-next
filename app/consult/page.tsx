@@ -7,6 +7,10 @@ type Mode = 'support' | 'check' | 'analyze'
 type CoreLevel = 'low' | 'medium' | 'high'
 type CoreKey = 'connection' | 'orientation' | 'research' | 'entrust'
 
+/* ======================
+   CORE ユーティリティ
+====================== */
+
 function levelToValue(level: CoreLevel) {
   if (level === 'low') return 1
   if (level === 'high') return 3
@@ -19,6 +23,10 @@ function levelLabel(level: CoreLevel) {
   return '中'
 }
 
+/* ======================
+   CORE 行
+====================== */
+
 function CoreRow({
   label,
   value,
@@ -30,80 +38,56 @@ function CoreRow({
 }) {
   const pct = (levelToValue(value) / 3) * 100
 
-  // ★ クリックした瞬間に色が変わる
-  const barColor = (() => {
-    if (value === 'low') return '#D1D5DB'    // light gray
-    if (value === 'medium') return '#9CA3AF' // medium gray
-    return '#4B5563'                         // dark gray
-  })()
-
-  const SegButton = ({ lv }: { lv: CoreLevel }) => {
-    const active = value === lv
-    return (
-      <button
-        type="button"
-        onClick={() => onChange(lv)}
-        style={{
-          fontSize: 12,
-          padding: '6px 10px',
-          borderRadius: 999,
-          border: '1px solid #ddd',
-          background: active ? '#ddd' : '#fff',
-          cursor: 'pointer',
-        }}
-        aria-pressed={active}
-      >
-        {lv}
-      </button>
-    )
-  }
-
   return (
     <div style={{ display: 'grid', gap: 8 }}>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'baseline',
-          gap: 12,
-        }}
-      >
-        <div style={{ fontSize: 12, color: '#555' }}>{label}</div>
-        <div style={{ fontSize: 12, color: '#777' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+        <div>{label}</div>
+        <div style={{ color: '#666' }}>
           {levelLabel(value)}（{value}）
         </div>
       </div>
 
-      {/* バー */}
-      <div
-        style={{
-          height: 10,
-          width: '100%',
-          background: '#eee',
-          borderRadius: 999,
-          overflow: 'hidden',
-        }}
-      >
+      <div style={{ height: 8, background: '#e5e7eb', borderRadius: 999 }}>
         <div
           style={{
             height: '100%',
             width: `${pct}%`,
-            background: barColor,
+            background: '#475569',
             borderRadius: 999,
-            transition: 'width 0.25s ease, background 0.2s ease',
+            transition: 'width .25s ease',
           }}
         />
       </div>
 
-      {/* 手動調整 */}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        <SegButton lv="low" />
-        <SegButton lv="medium" />
-        <SegButton lv="high" />
+      <div style={{ display: 'flex', gap: 8 }}>
+        {(['low', 'medium', 'high'] as CoreLevel[]).map((lv) => {
+          const active = value === lv
+          return (
+            <button
+              key={lv}
+              onClick={() => onChange(lv)}
+              style={{
+                flex: 1,
+                padding: '6px 0',
+                borderRadius: 999,
+                border: '1px solid #d1d5db',
+                background: active ? '#e5e7eb' : '#fff',
+                cursor: 'pointer',
+                fontSize: 12,
+              }}
+            >
+              {lv}
+            </button>
+          )
+        })}
       </div>
     </div>
   )
 }
+
+/* ======================
+   CORE ダッシュボード
+====================== */
 
 function CoreDashboard({
   persona,
@@ -114,88 +98,50 @@ function CoreDashboard({
   setPersona: (next: PersonaInput) => void
   onReset: () => void
 }) {
-  const update = (key: CoreKey, next: CoreLevel) => {
-    setPersona({
-      ...persona,
-      [key]: next,
-    })
+  const update = (key: CoreKey, lv: CoreLevel) => {
+    setPersona({ ...persona, [key]: lv })
   }
 
   return (
     <div
       style={{
-        marginTop: 16,
         padding: 16,
-        border: '1px solid #eee',
         borderRadius: 12,
+        border: '1px solid #e5e7eb',
+        background: '#fafafa',
       }}
     >
-      <div
+      <h3 style={{ margin: 0, marginBottom: 12 }}>AI常務の人格（CORE）</h3>
+
+      <div style={{ display: 'grid', gap: 16 }}>
+        <CoreRow label="Connection（共感）" value={persona.connection} onChange={(lv) => update('connection', lv)} />
+        <CoreRow label="Orientation（整理）" value={persona.orientation} onChange={(lv) => update('orientation', lv)} />
+        <CoreRow label="Research（深掘り）" value={persona.research} onChange={(lv) => update('research', lv)} />
+        <CoreRow label="Entrust（委ね）" value={persona.entrust} onChange={(lv) => update('entrust', lv)} />
+      </div>
+
+      <button
+        onClick={onReset}
         style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'baseline',
-          gap: 12,
-          flexWrap: 'wrap',
+          marginTop: 12,
+          fontSize: 12,
+          background: 'none',
+          border: 'none',
+          color: '#555',
+          cursor: 'pointer',
         }}
       >
-        <h3 style={{ margin: 0 }}>現在のAI常務 CORE</h3>
-
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-          <div style={{ fontSize: 12, color: '#777' }}>
-            ※ クリックで手動調整できます
-          </div>
-          <button
-            type="button"
-            onClick={onReset}
-            style={{
-              fontSize: 12,
-              padding: '6px 10px',
-              borderRadius: 999,
-              border: '1px solid #ddd',
-              background: '#fff',
-              cursor: 'pointer',
-            }}
-          >
-            既定に戻す
-          </button>
-        </div>
-      </div>
-
-      <div style={{ display: 'grid', gap: 14, marginTop: 12 }}>
-        <CoreRow
-          label="Connection（共感・承認）"
-          value={persona.connection as CoreLevel}
-          onChange={(lv) => update('connection', lv)}
-        />
-        <CoreRow
-          label="Orientation（整理・方向づけ）"
-          value={persona.orientation as CoreLevel}
-          onChange={(lv) => update('orientation', lv)}
-        />
-        <CoreRow
-          label="Research（問い・深掘り）"
-          value={persona.research as CoreLevel}
-          onChange={(lv) => update('research', lv)}
-        />
-        <CoreRow
-          label="Entrust（任せる・委ねる）"
-          value={persona.entrust as CoreLevel}
-          onChange={(lv) => update('entrust', lv)}
-        />
-      </div>
+        既定に戻す
+      </button>
     </div>
   )
 }
 
-export default function ConsultPage() {
-  const [inputText, setInputText] = useState('')
-  const [result, setResult] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [copied, setCopied] = useState(false)
+/* ======================
+   Consult Page
+====================== */
 
-  /** CORE（AI常務の人格状態） */
+export default function ConsultPage() {
   const defaultPersona = useMemo<PersonaInput>(
     () => ({
       connection: 'medium',
@@ -206,62 +152,38 @@ export default function ConsultPage() {
     []
   )
 
-  const [persona, setPersona] = useState<PersonaInput>(defaultPersona)
+  const [persona, setPersona] = useState(defaultPersona)
+  const [showCore, setShowCore] = useState(false)
 
-  /** API 呼び出し */
-  const callConsultApi = async (text: string, mode: Mode) => {
-    if (!text) return
+  const [inputText, setInputText] = useState('')
+  const [result, setResult] = useState('')
+  const [loadingMode, setLoadingMode] = useState<Mode | null>(null)
 
-    setLoading(true)
-    setError('')
+  const [copied, setCopied] = useState(false)
+
+  /* API 呼び出し */
+  const callApi = async (mode: Mode) => {
+    if (!inputText) return
+
+    setLoadingMode(mode)
     setResult('')
-    setCopied(false)
 
     try {
       const res = await fetch('/api/consult', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, persona, mode }),
+        body: JSON.stringify({ text: inputText, persona, mode }),
       })
 
-      if (!res.ok) throw new Error('API error')
       const data = await res.json()
-
-      /** CORE分析モード */
-      if (mode === 'analyze') {
-        const parsed = JSON.parse(data.reply)
-
-        setPersona({
-          connection: parsed.connection,
-          orientation: parsed.orientation,
-          research: parsed.research,
-          entrust: parsed.entrust,
-        })
-
-        setResult(
-`【AI常務がアップデートされました】
-
-Connection : ${parsed.connection}
-Orientation: ${parsed.orientation}
-Research   : ${parsed.research}
-Entrust    : ${parsed.entrust}
-
-${parsed.summary}
-
-※ 次回以降の返信は、この人格をもとに行われます`
-        )
-      } else {
-        setResult(data.reply)
-      }
-    } catch (e) {
-      console.error(e)
-      setError('通信エラーが発生しました')
+      setResult(data.reply)
     } finally {
-      setLoading(false)
+      setLoadingMode(null)
     }
   }
 
-  /** コピー */
+  const isLoading = loadingMode !== null
+
   const copyResult = async () => {
     if (!result) return
     await navigator.clipboard.writeText(result)
@@ -269,115 +191,202 @@ ${parsed.summary}
     setTimeout(() => setCopied(false), 1500)
   }
 
-  /** クリア */
-  const clearAll = () => {
-    setInputText('')
-    setResult('')
-    setError('')
-    setCopied(false)
-  }
-
-  /** COREを既定に戻す */
-  const resetPersona = () => {
-    setPersona(defaultPersona)
-  }
-
   return (
-    <div
-      style={{
-        padding: 24,
-        maxWidth: 720,
-        margin: '0 auto',
-        overflowX: 'hidden',
-      }}
-    >
-      <h1>AI常務に相談</h1>
+    <div style={{ maxWidth: 720, margin: '0 auto', padding: 24 }}>
+      {/* タイトル */}
+      <h1
+        style={{
+          textAlign: 'center',
+          fontSize: 28,
+          fontWeight: 700,
+          marginBottom: 20,
+        }}
+      >
+        AI常務に相談
+      </h1>
 
-      <p style={{ color: '#555', fontSize: 14 }}>
-        言葉選びや判断に迷ったとき、<br />
-        「理想のあなたならどう考えるか」を整理します。
-      </p>
-
-      {/* COREの可視化＆手動調整 */}
-      <CoreDashboard persona={persona} setPersona={setPersona} onReset={resetPersona} />
-
+      {/* 入力 */}
       <textarea
         rows={6}
-        style={{ width: '100%', boxSizing: 'border-box', marginTop: 16 }}
         value={inputText}
         onChange={(e) => setInputText(e.target.value)}
-        placeholder="部下とのやり取り、または送信前のメッセージを貼り付けてください"
+        placeholder="部下・取引先・社内チャットの文面を貼り付けてください"
+        style={{
+          width: '100%',
+          padding: 16,
+          borderRadius: 12,
+          border: '1px solid #cbd5f5',
+          boxSizing: 'border-box',
+        }}
       />
 
       {/* ボタン群 */}
-      <div
+      <div style={{ display: 'grid', gap: 12, marginTop: 20 }}>
+        <button
+          onClick={() => callApi('support')}
+          disabled={isLoading}
+          style={{
+            padding: 16,
+            borderRadius: 16,
+            background: '#0f172a',
+            color: '#fff',
+            fontSize: 16,
+            border: 'none',
+            cursor: 'pointer',
+            opacity: isLoading && loadingMode !== 'support' ? 0.5 : 1,
+          }}
+        >
+          {loadingMode === 'support' ? '返信案を考えています…' : '返信サポート'}
+        </button>
+
+        <button
+          onClick={() => callApi('check')}
+          disabled={isLoading}
+          style={{
+            padding: 14,
+            borderRadius: 14,
+            background: '#fff',
+            border: '1px solid #cbd5f5',
+            cursor: 'pointer',
+            opacity: isLoading && loadingMode !== 'check' ? 0.5 : 1,
+          }}
+        >
+          {loadingMode === 'check' ? '表現をチェックしています…' : '返信チェック'}
+        </button>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <button
+            onClick={() => callApi('analyze')}
+            disabled={isLoading}
+            style={{
+              padding: 14,
+              borderRadius: 14,
+              background: '#fff',
+              border: '1px solid #cbd5f5',
+              cursor: 'pointer',
+              opacity: isLoading && loadingMode !== 'analyze' ? 0.5 : 1,
+            }}
+          >
+            {loadingMode === 'analyze' ? '人格を分析しています…' : 'CORE分析'}
+          </button>
+
+          <button
+            onClick={() => {
+              setInputText('')
+              setResult('')
+            }}
+            disabled={isLoading}
+            style={{
+              padding: 14,
+              borderRadius: 14,
+              background: '#fff',
+              border: '1px solid #e5e7eb',
+              cursor: 'pointer',
+            }}
+          >
+            クリア
+          </button>
+        </div>
+      </div>
+
+      {/* 人格調整ボタン */}
+      <button
+        onClick={() => setShowCore((v) => !v)}
         style={{
+          margin: '20px auto 0',
           display: 'flex',
-          gap: 8,
-          marginTop: 12,
-          flexWrap: 'wrap',
+          alignItems: 'center',
+          gap: 6,
+          padding: '8px 18px',
+          borderRadius: 999,
+          border: '1px solid #e5e7eb',
+          background: '#fff',
+          fontSize: 14,
+          cursor: 'pointer',
+          color: '#111',
+          boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+          transition: 'background .2s ease, box-shadow .2s ease',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = '#f9fafb'
+          e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.08)'
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = '#fff'
+          e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.04)'
         }}
       >
-        <button onClick={() => callConsultApi(inputText, 'support')} disabled={loading || !inputText}>
-          {loading ? '考え中…' : '返信サポート'}
-        </button>
+        {showCore ? '▲ 人格調整を閉じる' : '▼ AI常務の人格を調整する'}
+      </button>
 
-        <button onClick={() => callConsultApi(inputText, 'check')} disabled={loading || !inputText}>
-          返信チェック
-        </button>
-
-        <button onClick={() => callConsultApi(inputText, 'analyze')} disabled={loading || !inputText}>
-          CORE分析
-        </button>
-
-        <button onClick={clearAll} disabled={loading}>
-          クリア
-        </button>
+      {/* CORE 展開 */}
+      <div
+        style={{
+          marginTop: 16,
+          overflow: 'hidden',
+          transition: 'all 0.35s ease',
+          opacity: showCore ? 1 : 0,
+          transform: showCore ? 'translateY(0)' : 'translateY(-8px)',
+          maxHeight: showCore ? 1000 : 0,
+          pointerEvents: showCore ? 'auto' : 'none',
+        }}
+      >
+        <CoreDashboard persona={persona} setPersona={setPersona} onReset={() => setPersona(defaultPersona)} />
       </div>
 
-      <div style={{ fontSize: 12, color: '#666', marginTop: 8 }}>
-        <div>※ 返信サポート：返し方を一緒に考えます</div>
-        <div>※ 返信チェック：表現の強さや誤解を確認します</div>
-        <div>※ CORE分析：あなたの関わり方の傾向を反映します</div>
-        <div>※ COREは上のボタンで手動調整できます（クリックで色も変化）</div>
-      </div>
-
-      {error && (
-        <p style={{ color: 'red', marginTop: 12 }}>
-          {error}
-        </p>
-      )}
-
+      {/* 結果表示 */}
       {result && (
-        <>
-          <hr style={{ margin: '24px 0' }} />
+        <div
+          style={{
+            marginTop: 28,
+            padding: 16,
+            borderRadius: 16,
+            background: '#f1f5f9',
+            border: '1px solid #cbd5e1',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 8,
+            }}
+          >
+            <div style={{ fontSize: 14, fontWeight: 600 }}>
+              🤖 AI常務からの提案
+            </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <h3 style={{ margin: 0 }}>AI常務からのアウトプット</h3>
-            <button onClick={copyResult} style={{ fontSize: 12 }}>
+            <button
+              onClick={copyResult}
+              style={{
+                fontSize: 12,
+                padding: '6px 10px',
+                borderRadius: 999,
+                border: '1px solid #cbd5e1',
+                background: '#fff',
+                cursor: 'pointer',
+              }}
+            >
               {copied ? 'コピーしました' : 'コピー'}
             </button>
           </div>
 
-          <div style={{ fontSize: 12, color: '#666', marginBottom: 8 }}>
-            ― 理想のあなたなら、こう考えるかもしれません ―
-          </div>
-
           <pre
             style={{
-              background: '#f5f5f5',
-              padding: 16,
+              margin: 0,
+              padding: 12,
+              background: '#ffffff',
+              borderRadius: 12,
               whiteSpace: 'pre-wrap',
-              wordBreak: 'break-word',
-              overflowX: 'auto',
-              maxWidth: '100%',
-              boxSizing: 'border-box',
-              lineHeight: 1.6,
+              lineHeight: 1.7,
+              fontSize: 14,
+              color: '#0f172a',
             }}
           >
             {result}
           </pre>
-        </>
+        </div>
       )}
     </div>
   )
