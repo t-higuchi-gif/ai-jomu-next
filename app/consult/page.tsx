@@ -238,7 +238,7 @@ export default function ConsultPage() {
           borderRadius: 12,
           border: '1px solid #cbd5f5',
           boxSizing: 'border-box',
-          fontSize: 14,
+          fontSize: 16,
           lineHeight: 1.7,
         }}
       />
