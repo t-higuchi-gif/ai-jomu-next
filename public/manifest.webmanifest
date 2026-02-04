@@ -1,0 +1,21 @@
+{
+  "name": "AI常務",
+  "short_name": "AI常務",
+  "description": "AI常務に相談できる業務支援AI",
+  "start_url": "/consult",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/android-icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/android-icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
