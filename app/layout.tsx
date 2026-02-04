@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "AI常務に相談",
+  title: "AI常務",
   description: "AI常務が思考整理と判断をサポートします",
 }
 
