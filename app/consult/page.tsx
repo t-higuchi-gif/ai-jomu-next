@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import { PersonaInput } from '@/lib/persona'
 
-type Mode = 'support' | 'check' | 'analyze'
+type Mode = 'support' | 'check' | 'analyze' | 'worry'
 type CoreLevel = 'low' | 'medium' | 'high'
 type CoreKey = 'connection' | 'orientation' | 'research' | 'entrust'
 
@@ -65,6 +65,7 @@ function CoreRow({
           return (
             <button
               key={lv}
+              type="button"
               onClick={() => onChange(lv)}
               style={{
                 flex: 1,
@@ -121,6 +122,7 @@ function CoreDashboard({
       </div>
 
       <button
+        type="button"
         onClick={onReset}
         style={{
           marginTop: 12,
@@ -163,7 +165,7 @@ export default function ConsultPage() {
 
   /* API 呼び出し */
   const callApi = async (mode: Mode) => {
-    if (!inputText) return
+    if (!inputText.trim()) return
 
     setLoadingMode(mode)
     setResult('')
@@ -176,7 +178,7 @@ export default function ConsultPage() {
       })
 
       const data = await res.json()
-      setResult(data.reply)
+      setResult(data.reply ?? '')
     } finally {
       setLoadingMode(null)
     }
@@ -189,6 +191,25 @@ export default function ConsultPage() {
     await navigator.clipboard.writeText(result)
     setCopied(true)
     setTimeout(() => setCopied(false), 1500)
+  }
+
+  const primaryBtnStyle: React.CSSProperties = {
+    padding: 16,
+    borderRadius: 16,
+    background: '#0f172a',
+    color: '#fff',
+    fontSize: 16,
+    border: 'none',
+    cursor: 'pointer',
+  }
+
+  const secondaryBtnStyle: React.CSSProperties = {
+    padding: 14,
+    borderRadius: 14,
+    background: '#fff',
+    border: '1px solid #cbd5f5',
+    cursor: 'pointer',
+    fontSize: 16,
   }
 
   return (
@@ -217,53 +238,60 @@ export default function ConsultPage() {
           borderRadius: 12,
           border: '1px solid #cbd5f5',
           boxSizing: 'border-box',
+          fontSize: 14,
+          lineHeight: 1.7,
         }}
       />
 
-      {/* ボタン群 */}
+      {/* ボタン群：4段 */}
       <div style={{ display: 'grid', gap: 12, marginTop: 20 }}>
+        {/* 1段目：返信サポート */}
         <button
+          type="button"
           onClick={() => callApi('support')}
           disabled={isLoading}
           style={{
-            padding: 16,
-            borderRadius: 16,
-            background: '#0f172a',
-            color: '#fff',
-            fontSize: 16,
-            border: 'none',
-            cursor: 'pointer',
+            ...primaryBtnStyle,
             opacity: isLoading && loadingMode !== 'support' ? 0.5 : 1,
           }}
         >
           {loadingMode === 'support' ? '返信案を考えています…' : '返信サポート'}
         </button>
 
+        {/* 2段目：返信チェック */}
         <button
+          type="button"
           onClick={() => callApi('check')}
           disabled={isLoading}
           style={{
-            padding: 14,
-            borderRadius: 14,
-            background: '#fff',
-            border: '1px solid #cbd5f5',
-            cursor: 'pointer',
+            ...secondaryBtnStyle,
             opacity: isLoading && loadingMode !== 'check' ? 0.5 : 1,
           }}
         >
           {loadingMode === 'check' ? '表現をチェックしています…' : '返信チェック'}
         </button>
 
+        {/* 3段目：お悩み相談 */}
+        <button
+          type="button"
+          onClick={() => callApi('worry')}
+          disabled={isLoading}
+          style={{
+            ...secondaryBtnStyle,
+            opacity: isLoading && loadingMode !== 'worry' ? 0.5 : 1,
+          }}
+        >
+          {loadingMode === 'worry' ? '一緒に整理しています…' : 'お悩み相談'}
+        </button>
+
+        {/* 4段目：CORE分析・クリア */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <button
+            type="button"
             onClick={() => callApi('analyze')}
             disabled={isLoading}
             style={{
-              padding: 14,
-              borderRadius: 14,
-              background: '#fff',
-              border: '1px solid #cbd5f5',
-              cursor: 'pointer',
+              ...secondaryBtnStyle,
               opacity: isLoading && loadingMode !== 'analyze' ? 0.5 : 1,
             }}
           >
@@ -271,6 +299,7 @@ export default function ConsultPage() {
           </button>
 
           <button
+            type="button"
             onClick={() => {
               setInputText('')
               setResult('')
@@ -282,6 +311,7 @@ export default function ConsultPage() {
               background: '#fff',
               border: '1px solid #e5e7eb',
               cursor: 'pointer',
+              fontSize: 16,
             }}
           >
             クリア
@@ -289,35 +319,39 @@ export default function ConsultPage() {
         </div>
       </div>
 
-      {/* 人格調整ボタン */}
-      <button
-        onClick={() => setShowCore((v) => !v)}
-        style={{
-          margin: '20px auto 0',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          padding: '8px 18px',
-          borderRadius: 999,
-          border: '1px solid #e5e7eb',
-          background: '#fff',
-          fontSize: 14,
-          cursor: 'pointer',
-          color: '#111',
-          boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
-          transition: 'background .2s ease, box-shadow .2s ease',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = '#f9fafb'
-          e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.08)'
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = '#fff'
-          e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.04)'
-        }}
-      >
-        {showCore ? '▲ 人格調整を閉じる' : '▼ AI常務の人格を調整する'}
-      </button>
+      {/* 人格調整ボタン（中央寄せ固定） */}
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <button
+          type="button"
+          onClick={() => setShowCore((v) => !v)}
+          style={{
+            margin: '20px auto 0',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 6,
+            padding: '8px 18px',
+            borderRadius: 999,
+            border: '1px solid #e5e7eb',
+            background: '#fff',
+            fontSize: 14,
+            cursor: 'pointer',
+            color: '#111',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+            transition: 'background .2s ease, box-shadow .2s ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = '#f9fafb'
+            e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.08)'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = '#fff'
+            e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.04)'
+          }}
+        >
+          {showCore ? '▲ 人格調整を閉じる' : '▼ AI常務の人格を調整する'}
+        </button>
+      </div>
 
       {/* CORE 展開 */}
       <div
@@ -334,7 +368,7 @@ export default function ConsultPage() {
         <CoreDashboard persona={persona} setPersona={setPersona} onReset={() => setPersona(defaultPersona)} />
       </div>
 
-      {/* 結果表示 */}
+      {/* 結果表示：外枠 + 中の白い枠（復活） */}
       {result && (
         <div
           style={{
@@ -353,11 +387,10 @@ export default function ConsultPage() {
               marginBottom: 8,
             }}
           >
-            <div style={{ fontSize: 14, fontWeight: 600 }}>
-              🤖 AI常務からの提案
-            </div>
+            <div style={{ fontSize: 14, fontWeight: 600 }}>🤖 AI常務からの提案</div>
 
             <button
+              type="button"
               onClick={copyResult}
               style={{
                 fontSize: 12,
@@ -377,6 +410,7 @@ export default function ConsultPage() {
               margin: 0,
               padding: 12,
               background: '#ffffff',
+              border: '1px solid #e5e7eb',
               borderRadius: 12,
               whiteSpace: 'pre-wrap',
               lineHeight: 1.7,

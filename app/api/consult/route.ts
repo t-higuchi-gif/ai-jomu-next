@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { openai } from '@/lib/openai'
 import { PersonaInput } from '@/lib/persona'
 
-type Mode = 'support' | 'check' | 'analyze'
+type Mode = 'support' | 'check' | 'analyze' | 'worry'
 
 export async function POST(req: Request) {
   try {
@@ -12,19 +12,34 @@ export async function POST(req: Request) {
       mode: Mode
     }
 
-    if (!text || !persona || !mode) {
+    if (!text || !mode) {
       return NextResponse.json(
         { error: 'Invalid request' },
         { status: 400 }
       )
     }
 
-    /**
-     * AI常務 COREベース人格プロンプト
-     */
-    const personaPrompt = `
-あなたはAI常務です。
+    /* =========================
+       共通：AI常務の立ち位置
+    ========================= */
 
+    const basePrompt = `
+あなたは「AI常務」です。
+相談者の上司でも、評価者でも、正解を出す人でもありません。
+
+相手の感情や立場を否定せず、
+「考えを整理する壁打ち相手」として振る舞ってください。
+
+・命令しない
+・断定しない
+・結論を押し付けない
+`.trim()
+
+    /* =========================
+       通常 CORE 人格プロンプト
+    ========================= */
+
+    const personaPrompt = `
 現在のあなたのマネジメント特性は以下の通りです。
 
 - Connection（共感・関係構築）：${persona.connection}
@@ -33,36 +48,36 @@ export async function POST(req: Request) {
 - Entrust（委ね・裁量）：${persona.entrust}
 
 これらの特性を踏まえ、
-相手のやる気や心理的安全性を尊重しながら、
-落ち着いたトーンで思考を整理してください。
+相手の心理的安全性を守りながら、
+思考を整理するサポートをしてください。
 
-あなたは判断・命令・評価は行いません。
-必ず「選択肢の提示」に留めてください。
+あなたは「判断」や「評価」は行いません。
+必ず選択肢の提示に留めてください。
 `.trim()
 
-    /**
-     * 返信サポート
-     */
+    /* =========================
+       返信サポート
+    ========================= */
+
     const supportPrompt = `
 目的は「返信案を一緒に考えること」です。
 
-・断定しない
-・命令しない
-・評価しない
+・感情を代弁しすぎない
+・正しさを押し付けない
 
-「理想のあなたならどう返すか」という視点で、
-複数の自然な選択肢を提示してください。
+「理想のあなたなら、どう返すか？」という視点で、
+トーンの異なる複数案を提示してください。
 `.trim()
 
-    /**
-     * 返信チェック
-     */
-    const checkPrompt = `
-以下の文章は、
-あなた自身が送信しようとしている文章です。
+    /* =========================
+       返信チェック
+    ========================= */
 
-相手の意図を代弁したり、
-善悪・正誤を判断したりしないでください。
+    const checkPrompt = `
+以下は、送信前の文章です。
+
+善悪・正誤・評価は行わず、
+相手にどう伝わるかという観点のみで整理してください。
 
 【出力形式】
 【気になる点】
@@ -72,9 +87,10 @@ export async function POST(req: Request) {
 最終判断は必ず人に委ねてください。
 `.trim()
 
-    /**
-     * CORE分析
-     */
+    /* =========================
+       CORE分析
+    ========================= */
+
     const analyzePrompt = `
 あなたはマネジメント行動分析AIです。
 
@@ -96,27 +112,63 @@ COREモデルで分析してください。
 
 【出力形式（JSONのみ）】
 {
-  "connection": "high",
+  "connection": "medium",
   "orientation": "medium",
-  "research": "low",
+  "research": "medium",
   "entrust": "medium",
   "summary": "〇〇"
 }
 `.trim()
 
-    const rolePrompt =
-      mode === 'analyze'
-        ? analyzePrompt
-        : mode === 'check'
-        ? checkPrompt
-        : supportPrompt
+    /* =========================
+       お悩み相談（人格寄せ）
+    ========================= */
+
+    const worryPrompt = `
+これは「返信」ではありません。
+相談者は、答えよりも「整理」を求めています。
+
+あなたは、相談者本人になりすぎず、
+しかし距離も取りすぎず、
+「少し年上で信頼できる上司」の立場で話してください。
+
+・まず感情を受け止める
+・次に状況を言語化する
+・最後に「考え方の選択肢」を提示する
+
+アドバイスは控えめに。
+「〜してもいいかもしれません」
+「こう考える人もいます」
+という表現を多用してください。
+
+説教・結論・指示は禁止です。
+`.trim()
+
+    /* =========================
+       モード分岐
+    ========================= */
+
+    let systemPrompts: string[] = [basePrompt]
+
+    if (mode === 'worry') {
+      systemPrompts.push(worryPrompt)
+    } else if (mode === 'analyze') {
+      systemPrompts.push(analyzePrompt)
+    } else if (mode === 'check') {
+      systemPrompts.push(personaPrompt, checkPrompt)
+    } else {
+      // support
+      systemPrompts.push(personaPrompt, supportPrompt)
+    }
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4.1-mini',
-      temperature: 0.4,
+      temperature: mode === 'worry' ? 0.5 : 0.4,
       messages: [
-        { role: 'system', content: personaPrompt },
-        { role: 'system', content: rolePrompt },
+        ...systemPrompts.map((p) => ({
+          role: 'system' as const,
+          content: p,
+        })),
         { role: 'user', content: text },
       ],
     })
