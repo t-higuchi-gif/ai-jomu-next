@@ -179,6 +179,20 @@ export default function ConsultPage() {
 
       const data = await res.json()
       setResult(data.reply ?? '')
+
+      // 👇 ここ！！（AIの返答が確定した瞬間）
+      fetch('/api/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode,
+          device: window.innerWidth < 768 ? 'mobile' : 'pc',
+          text_length: inputText.length,
+          response_length: (data.reply ?? '').length,
+          core_used: true, // 今は固定でOK
+        }),
+      }).catch(() => {})
+
     } finally {
       setLoadingMode(null)
     }
