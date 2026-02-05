@@ -181,17 +181,28 @@ export default function ConsultPage() {
       setResult(data.reply ?? '')
 
       // 👇 ここ！！（AIの返答が確定した瞬間）
-      fetch('/api/log', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          mode,
-          device: window.innerWidth < 768 ? 'mobile' : 'pc',
-          text_length: inputText.length,
-          response_length: (data.reply ?? '').length,
-          core_used: true, // 今は固定でOK
-        }),
-      }).catch(() => {})
+      const payload = {
+        mode,
+        device: /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+          ? 'mobile'
+          : 'pc',
+        text_length: inputText.length,
+        response_length: (data.reply ?? '').length,
+        core_used: true,
+      }
+
+      if (navigator.sendBeacon) {
+        const blob = new Blob([JSON.stringify(payload)], {
+            type: 'application/json',
+        })
+        navigator.sendBeacon('/api/log', blob)
+      } else {
+        fetch('/api/log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        }).catch(() => {})
+      }
 
     } finally {
       setLoadingMode(null)
