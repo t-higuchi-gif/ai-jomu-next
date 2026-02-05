@@ -2,7 +2,15 @@ import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    let body: any = {};
+
+    // sendBeacon / fetch 両対応
+    try {
+      body = await req.json();
+    } catch {
+      const text = await req.text();
+      body = JSON.parse(text);
+    }
 
     await fetch(process.env.GAS_LOG_URL!, {
       method: "POST",
@@ -21,7 +29,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ status: "ok" });
   } catch (e) {
-    // ログ失敗はユーザー体験に影響させない
+    // ログ失敗はUXに影響させない
     return NextResponse.json({ status: "ng" });
   }
 }
